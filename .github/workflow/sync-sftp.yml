@@ -1,0 +1,34 @@
+name: Sync Panel to GitHub
+
+on:
+  workflow_dispatch:     # bisa jalan manual
+  schedule:
+    - cron: "0 */6 * * *" # jalan tiap 6 jam
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Install LFTP
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Download files from Panel (SFTP)
+        run: |
+          mkdir -p panel_sync
+          lftp -u ${{ secrets.SFTP_USER }},${{ secrets.SFTP_PASS }} sftp://${{ secrets.SFTP_HOST }}:${{ secrets.SFTP_PORT }} -e "
+            mirror --verbose /home/container ./panel_sync;
+            quit
+          "
+
+      - name: Commit & Push
+        run: |
+          cp -r panel_sync/* .
+          rm -rf panel_sync
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Sync from Panel [$(date)]" || echo "No changes"
+          git push
