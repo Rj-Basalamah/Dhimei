@@ -1,0 +1,25 @@
+name: Sync Panel Files
+
+on:
+  workflow_dispatch:     # bisa dijalankan manual
+  schedule:
+    - cron: "0 */12 * * *"   # otomatis jalan tiap 12 jam
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Upload Panel Files to GitHub
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          username: ${{ secrets.SFTP_USER }}
+          password: ${{ secrets.SFTP_PASS }}
+          server-dir: /home/container/   # lokasi folder di panel
+          local-dir: ./                  # folder repo GitHub
+          dangerous-clean-slate: false   # jangan hapus file yang ada
